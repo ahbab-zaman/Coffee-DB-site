@@ -24,6 +24,7 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     await client.connect();
     const coffeeCollection = client.db("coffeeDB").collection("coffee");
+    const userCollection = client.db("userDB").collection("user");
 
     app.post("/coffees", async (req, res) => {
       const newCoffees = req.body;
@@ -32,7 +33,13 @@ async function run() {
       res.send(result);
     });
 
-    app.put("/coffees/:id", async(req, res) => {
+    app.post("/users", async (req, res) => {
+      const newUsers = req.body;
+      const result = await userCollection.insertOne(newUsers);
+      res.send(result);
+    });
+
+    app.put("/coffees/:id", async (req, res) => {
       const id = req.params.id;
       const cursor = { _id: new ObjectId(id) };
       const options = { upsert: true };
@@ -49,6 +56,20 @@ async function run() {
         },
       };
       const result = await coffeeCollection.updateOne(cursor, coffee, options);
+      res.send(result);
+    });
+
+    // User update
+
+    app.patch("/users", async (req, res) => {
+      const email = req.body.email;
+      const filter = { email };
+      const updatedUser = {
+        $set: {
+          lastLoginTime: req.body.lastLoginTime,
+        },
+      };
+      const result = await userCollection.updateOne(filter, updatedUser);
       res.send(result)
     });
 
@@ -65,10 +86,25 @@ async function run() {
       });
     });
 
+    // Users get
+    app.get("/users", async (req, res) => {
+      const cursor = userCollection.find();
+      const result = await cursor.toArray();
+      res.send(result);
+    });
+
     app.delete("/coffees/:id", async (req, res) => {
       const id = req.params.id;
       const query = { _id: new ObjectId(id) };
       const result = await coffeeCollection.deleteOne(query);
+      res.send(result);
+    });
+
+    // Users delete
+    app.delete("/users/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await userCollection.deleteOne(query);
       res.send(result);
     });
 
